@@ -33,6 +33,10 @@ export function SwapSidebar({ initialTokens }: SwapSidebarProps) {
           symbol={liveChartToken.symbol}
           color={liveChartToken.logoColor}
           height={220}
+          seedPrice={liveChartToken.priceUSD}
+          seedChange24h={liveChartToken.change24h}
+          seedVolume={liveChartToken.volume24h}
+          seedMarketCap={liveChartToken.marketCap}
         />
       </div>
 

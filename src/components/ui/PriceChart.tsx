@@ -18,6 +18,11 @@ interface PriceChartProps {
   symbol: string
   color?: string
   height?: number
+  // Passed from token data so the fallback card can show stats without a chart
+  seedPrice?: number
+  seedChange24h?: number
+  seedVolume?: number
+  seedMarketCap?: number
 }
 
 const RANGES = [
@@ -29,12 +34,17 @@ const RANGES = [
 
 type Days = 1 | 7 | 30 | 365
 
-export function PriceChart({ tokenId, symbol, color = '#F7931A', height = 220 }: PriceChartProps) {
+export function PriceChart({
+  tokenId, symbol, color = '#F7931A', height = 220,
+  seedPrice, seedChange24h, seedVolume, seedMarketCap,
+}: PriceChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const seriesRef = useRef<ISeriesApi<'Area'> | null>(null)
   const [range, setRange] = useState<Days>(7)
   const [loading, setLoading] = useState(true)
+  // noData = fetch succeeded but returned 0 points (on-chain only, no exchange OHLC)
+  const [noData, setNoData] = useState(false)
   const [error, setError] = useState(false)
   const [priceChange, setPriceChange] = useState<{ pct: number; abs: number } | null>(null)
   const [currentPrice, setCurrentPrice] = useState<number | null>(null)
@@ -98,6 +108,7 @@ export function PriceChart({ tokenId, symbol, color = '#F7931A', height = 220 }:
     if (!seriesRef.current) return
     setLoading(true)
     setError(false)
+    setNoData(false)
     try {
       const res = await fetch(`/api/chart/${encodeURIComponent(tokenId)}?days=${range}`)
       if (!res.ok) throw new Error('fetch failed')
@@ -113,12 +124,14 @@ export function PriceChart({ tokenId, symbol, color = '#F7931A', height = 220 }:
         chartRef.current?.applyOptions({
           timeScale: { timeVisible: range === 1 },
         })
-
         const first = data.prices[0].value
         const last = data.prices[data.prices.length - 1].value
         const abs = last - first
         setCurrentPrice(last)
         setPriceChange({ pct: (abs / first) * 100, abs })
+      } else {
+        // Fetch succeeded but no OHLC data — token trades on-chain only (no CEX)
+        setNoData(true)
       }
     } catch {
       setError(true)
@@ -135,7 +148,54 @@ export function PriceChart({ tokenId, symbol, color = '#F7931A', height = 220 }:
     }
   }, [fetchData, range])
 
-  const positive = (priceChange?.pct ?? 0) >= 0
+  const positive = (priceChange?.pct ?? seedChange24h ?? 0) >= 0
+  const displayPrice = currentPrice ?? seedPrice ?? null
+
+  // No OHLC data available — token trades on Bitcoin DEXes only, no CEX listing
+  if (noData && !loading) {
+    const change = seedChange24h ?? 0
+    const changePositive = change >= 0
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex items-baseline gap-2">
+          <span className="text-text-primary font-bold text-xl tabular-nums">
+            {displayPrice !== null ? formatUSD(displayPrice) : '—'}
+          </span>
+          <span className="text-text-muted text-sm">{symbol}</span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-surface rounded-xl p-3">
+            <div className="text-text-muted text-xs mb-1">24h Change</div>
+            <div className={`font-semibold text-sm ${changePositive ? 'text-success' : 'text-danger'}`}>
+              {changePositive ? '+' : ''}{change.toFixed(2)}%
+            </div>
+          </div>
+          <div className="bg-surface rounded-xl p-3">
+            <div className="text-text-muted text-xs mb-1">24h Volume</div>
+            <div className="text-text-primary font-semibold text-sm">
+              {seedVolume ? formatUSD(seedVolume) : '—'}
+            </div>
+          </div>
+          {seedMarketCap !== undefined && seedMarketCap > 0 && (
+            <div className="bg-surface rounded-xl p-3">
+              <div className="text-text-muted text-xs mb-1">Market Cap</div>
+              <div className="text-text-primary font-semibold text-sm">{formatUSD(seedMarketCap)}</div>
+            </div>
+          )}
+          <div className="bg-surface rounded-xl p-3">
+            <div className="text-text-muted text-xs mb-1">Traded on</div>
+            <div className="text-text-primary font-semibold text-sm">Bitcoin DEXes</div>
+          </div>
+        </div>
+
+        <p className="text-text-muted text-xs leading-relaxed">
+          {symbol} trades natively on Bitcoin DEXes (Richswap, Luminex). OHLC chart data
+          isn&apos;t available via public APIs for on-chain only Rune tokens.
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -144,7 +204,7 @@ export function PriceChart({ tokenId, symbol, color = '#F7931A', height = 220 }:
         <div>
           <div className="flex items-baseline gap-2">
             <span className="text-text-primary font-bold text-xl tabular-nums">
-              {currentPrice !== null ? formatUSD(currentPrice) : '—'}
+              {displayPrice !== null ? formatUSD(displayPrice) : '—'}
             </span>
             <span className="text-text-muted text-sm">{symbol}</span>
           </div>
@@ -197,7 +257,7 @@ export function PriceChart({ tokenId, symbol, color = '#F7931A', height = 220 }:
         )}
       </div>
 
-      {range === 1 && !error && (
+      {range === 1 && !error && !noData && (
         <p className="text-text-muted text-xs text-center">Auto-refreshes every 90 seconds</p>
       )}
     </div>
