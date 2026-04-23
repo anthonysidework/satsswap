@@ -1,9 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTokens } from '@/hooks/useTokens'
 import { formatUSD, formatAmount } from '@/lib/utils'
 import { Badge } from '@/components/ui/Badge'
 import { TokenLogo } from '@/components/ui/TokenLogo'
+import { Sparkline } from '@/components/ui/Sparkline'
 import Link from 'next/link'
 import { TrendingUp, TrendingDown, ArrowUpDown } from 'lucide-react'
 import type { AssetType } from '@/types'
@@ -15,6 +16,14 @@ export function TokenTable({ filter }: { filter: AssetType | 'ALL' }) {
   const [sortKey, setSortKey] = useState<SortKey>('volume24h')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const { tokens: allTokens, isLive } = useTokens()
+  const [sparklines, setSparklines] = useState<Record<string, number[]>>({})
+
+  useEffect(() => {
+    fetch('/api/sparklines')
+      .then((r) => r.json())
+      .then((data: Record<string, number[]>) => setSparklines(data))
+      .catch(() => {})
+  }, [])
 
   const tokens = allTokens.filter((t) => {
     if (filter === 'ALL') return true
@@ -60,6 +69,7 @@ export function TokenTable({ filter }: { filter: AssetType | 'ALL' }) {
             <th className="text-right px-4 py-3"><SortHeader label="24h %" k="change24h" /></th>
             <th className="text-right px-4 py-3 hidden md:table-cell"><SortHeader label="Volume 24h" k="volume24h" /></th>
             <th className="text-right px-4 py-3 hidden lg:table-cell"><SortHeader label="Market Cap" k="marketCap" /></th>
+            <th className="text-right px-4 py-3 hidden xl:table-cell text-text-muted text-xs font-medium">7D Chart</th>
             <th className="text-right px-4 py-3 w-24" />
           </tr>
         </thead>
@@ -98,6 +108,16 @@ export function TokenTable({ filter }: { filter: AssetType | 'ALL' }) {
               </td>
               <td className="px-4 py-4 text-right hidden lg:table-cell text-text-secondary text-sm font-mono">
                 {formatUSD(token.marketCap)}
+              </td>
+              <td className="px-4 py-4 text-right hidden xl:table-cell">
+                <div className="flex justify-end">
+                  <Sparkline
+                    prices={sparklines[token.id] ?? []}
+                    positive={token.change24h >= 0}
+                    width={80}
+                    height={32}
+                  />
+                </div>
               </td>
               <td className="px-4 py-4 text-right">
                 <Link
