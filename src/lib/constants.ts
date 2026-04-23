@@ -99,6 +99,7 @@ export const TOKEN_LIST: Token[] = [
     volume24h: 58_252.29,
     marketCap: 8_286_681,
     logoColor: '#E83E8C',
+    logoUrl: 'https://assets.coingecko.com/coins/images/54456/standard/MIM_LOGO_2.png?1740171004',
   },
   {
     id: 'ORDI',
