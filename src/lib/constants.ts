@@ -43,6 +43,7 @@ export const TOKEN_LIST: Token[] = [
     volume24h: 4_987_838,
     marketCap: 0,
     logoColor: '#F7931A',
+    logoUrl: 'https://assets.coingecko.com/coins/images/37352/standard/DOGGOTOTHEMOON.png?1714096969',
   },
   {
     id: 'SATOSHI•NAKAMOTO',
