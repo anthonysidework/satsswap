@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { TOKEN_LIST } from '@/lib/constants'
+import { useTokens } from '@/hooks/useTokens'
 import { formatUSD, formatAmount } from '@/lib/utils'
 import { Badge } from '@/components/ui/Badge'
 import Link from 'next/link'
@@ -13,8 +13,9 @@ type SortDir = 'asc' | 'desc'
 export function TokenTable({ filter }: { filter: AssetType | 'ALL' }) {
   const [sortKey, setSortKey] = useState<SortKey>('volume24h')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const { tokens: allTokens, isLive } = useTokens()
 
-  const tokens = TOKEN_LIST.filter((t) => {
+  const tokens = allTokens.filter((t) => {
     if (filter === 'ALL') return true
     return t.type === filter
   }).sort((a, b) => {
@@ -43,6 +44,12 @@ export function TokenTable({ filter }: { filter: AssetType | 'ALL' }) {
 
   return (
     <div className="overflow-x-auto">
+      {isLive && (
+        <div className="flex items-center gap-1.5 px-4 py-2 border-b border-border bg-success/5 text-success text-xs">
+          <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+          Live prices
+        </div>
+      )}
       <table className="w-full">
         <thead>
           <tr className="border-b border-border">

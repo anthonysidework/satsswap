@@ -1,6 +1,6 @@
 'use client'
 import { useState, useMemo } from 'react'
-import { TOKEN_LIST } from '@/lib/constants'
+import { useTokens } from '@/hooks/useTokens'
 import type { Token } from '@/types'
 import { formatUSD } from '@/lib/utils'
 import { Search, X } from 'lucide-react'
@@ -17,9 +17,10 @@ type FilterTab = 'ALL' | 'RUNE' | 'BRC20' | 'BTC'
 export function TokenSelector({ onSelect, onClose, excludeId }: TokenSelectorProps) {
   const [query, setQuery] = useState('')
   const [tab, setTab] = useState<FilterTab>('ALL')
+  const { tokens } = useTokens()
 
   const filtered = useMemo(() => {
-    return TOKEN_LIST.filter((t) => {
+    return tokens.filter((t) => {
       if (t.id === excludeId) return false
       if (tab !== 'ALL' && t.type !== tab) return false
       if (query) {

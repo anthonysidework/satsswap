@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
-import { SUPPORTED_DEXES, TOKEN_LIST } from '@/lib/constants'
+import { SUPPORTED_DEXES } from '@/lib/constants'
+import { getLiveTokenList } from '@/lib/prices'
 import { formatUSD } from '@/lib/utils'
 import { ArrowRight, Shield, Zap, BarChart3, GitMerge } from 'lucide-react'
 
@@ -55,8 +56,9 @@ const FEATURES = [
   },
 ]
 
-export default function Home() {
-  const topTokens = TOKEN_LIST.slice(0, 5)
+export default async function Home() {
+  const liveTokens = await getLiveTokenList()
+  const topTokens = liveTokens.slice(0, 5)
 
   return (
     <div className="overflow-hidden">

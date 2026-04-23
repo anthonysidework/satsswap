@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAggregatedQuote } from '@/lib/aggregator'
-import { TOKEN_LIST } from '@/lib/constants'
+import { getLiveTokenList } from '@/lib/prices'
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,8 +13,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const fromToken = TOKEN_LIST.find((t) => t.id === fromTokenId)
-    const toToken = TOKEN_LIST.find((t) => t.id === toTokenId)
+    const tokens = await getLiveTokenList()
+    const fromToken = tokens.find((t) => t.id === fromTokenId)
+    const toToken = tokens.find((t) => t.id === toTokenId)
 
     if (!fromToken || !toToken) {
       return NextResponse.json({ error: 'Token not found' }, { status: 404 })
