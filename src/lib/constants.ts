@@ -13,7 +13,7 @@ export const SUPPORTED_DEXES = [
   { name: 'Magic Eden', logo: 'M', color: '#E83E8C' },
 ]
 
-// Confirmed CoinGecko image URLs (fetched 2025-04-22, stable CDN)
+// CoinGecko CDN — stable image URLs confirmed 2026-04-23
 const CG = 'https://coin-images.coingecko.com/coins/images'
 
 export const TOKEN_LIST: Token[] = [
@@ -56,6 +56,7 @@ export const TOKEN_LIST: Token[] = [
     volume24h: 119.10,
     marketCap: 442_037,
     logoColor: '#9D4EDD',
+    logoUrl: `${CG}/37190/small/satoshi-nakamoto-rune.jpeg?1713672566`,
   },
   {
     id: 'RSIC•GENESIS•RUNE',
@@ -69,6 +70,7 @@ export const TOKEN_LIST: Token[] = [
     volume24h: 1_520.85,
     marketCap: 1_108_886,
     logoColor: '#22C55E',
+    logoUrl: `${CG}/37157/small/runecoin.jpeg?1713500004`,
   },
   {
     id: 'UNCOMMON•GOODS',
@@ -82,6 +84,7 @@ export const TOKEN_LIST: Token[] = [
     volume24h: 2_303.35,
     marketCap: 1_198_436,
     logoColor: '#00B4D8',
+    logoUrl: `${CG}/37506/small/Screenshot_2024-05-02_at_10.21.26_AM.png?1714616521`,
   },
   {
     id: 'MAGIC•INTERNET•MONEY',

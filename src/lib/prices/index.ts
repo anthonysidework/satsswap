@@ -64,9 +64,10 @@ async function buildLiveTokenList(): Promise<Token[]> {
           change24h: live.change24h,
           volume24h: live.volume24hUSD,
           marketCap: live.marketCapUSD,
+          // Use live CoinGecko logo if available, fall back to hardcoded constant
+          logoUrl: live.logoUrl || token.logoUrl,
         }
       }
-      // Fallback: scale the seed price with live BTC/USD
       return {
         ...token,
         priceUSD: token.priceBTC * btcUSD,
