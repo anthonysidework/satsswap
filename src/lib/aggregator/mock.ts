@@ -23,7 +23,6 @@ function buildMockAdapter(
 
       const [min, max] = rateMultiplierRange
       const multiplier = min + Math.random() * (max - min)
-      // Rate = how many toTokens you get per 1 fromToken
       const baseRate = params.fromToken.priceBTC / params.toToken.priceBTC
       const rate = baseRate * multiplier
 
@@ -36,7 +35,8 @@ function buildMockAdapter(
             : 1.0 + Math.random() * 2.0
 
       const dexFee = params.fromAmount * params.fromToken.priceBTC * (feeBps / 10_000)
-      const networkFeeSats = Math.floor(1500 + Math.random() * 2000)
+      // Use injected real network fee if available, otherwise fall back to a static estimate
+      const networkFeeSats = params.networkFeeSats ?? 2000
 
       return {
         dex: name,
@@ -47,6 +47,7 @@ function buildMockAdapter(
         dexFee,
         networkFeeSats,
         isBest: false,
+        isLive: false,
         liquidityUSD: 500_000 * liquidityMultiplier * (0.8 + Math.random() * 0.4),
       }
     },

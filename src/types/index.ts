@@ -25,6 +25,7 @@ export interface DexQuote {
   networkFeeSats: number
   isBest: boolean
   liquidityUSD: number
+  isLive: boolean   // false = simulated quote, true = real DEX API
 }
 
 export interface AggregatedQuote {

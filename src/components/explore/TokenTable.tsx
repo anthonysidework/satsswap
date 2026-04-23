@@ -12,7 +12,7 @@ import type { AssetType } from '@/types'
 type SortKey = 'priceUSD' | 'change24h' | 'volume24h' | 'marketCap'
 type SortDir = 'asc' | 'desc'
 
-export function TokenTable({ filter }: { filter: AssetType | 'ALL' }) {
+export function TokenTable({ filter, query = '' }: { filter: AssetType | 'ALL'; query?: string }) {
   const [sortKey, setSortKey] = useState<SortKey>('volume24h')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const { tokens: allTokens, isLive } = useTokens()
@@ -25,9 +25,11 @@ export function TokenTable({ filter }: { filter: AssetType | 'ALL' }) {
       .catch(() => {})
   }, [])
 
+  const q = query.toLowerCase()
   const tokens = allTokens.filter((t) => {
-    if (filter === 'ALL') return true
-    return t.type === filter
+    if (filter !== 'ALL' && t.type !== filter) return false
+    if (q) return t.symbol.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)
+    return true
   }).sort((a, b) => {
     const dir = sortDir === 'desc' ? -1 : 1
     return (a[sortKey] - b[sortKey]) * dir

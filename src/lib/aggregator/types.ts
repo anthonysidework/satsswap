@@ -6,6 +6,7 @@ export interface QuoteParams {
   fromAmount: number
   slippageBps: number
   walletAddress?: string
+  networkFeeSats?: number  // injected from real mempool fee estimation
 }
 
 export interface DexAdapter {

@@ -1,23 +1,48 @@
 'use client'
 import type { AggregatedQuote } from '@/types'
 import { formatAmount, formatUSD, formatSats } from '@/lib/utils'
-import { ChevronDown, ChevronUp, Zap, Shield } from 'lucide-react'
-import { useState } from 'react'
+import { ChevronDown, ChevronUp, Zap, Shield, FlaskConical } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { PROTOCOL_FEE_BPS, BTC_USD_PRICE } from '@/lib/constants'
 
 interface QuoteDisplayProps {
   quote: AggregatedQuote
+  onExpired?: () => void
 }
 
-export function QuoteDisplay({ quote }: QuoteDisplayProps) {
+export function QuoteDisplay({ quote, onExpired }: QuoteDisplayProps) {
   const [showAllRoutes, setShowAllRoutes] = useState(false)
+  const [expiresIn, setExpiresIn] = useState(() =>
+    Math.max(0, Math.round((quote.expiresAt - Date.now()) / 1000))
+  )
   const { bestQuote, quotes, fromToken, toToken, fromAmount } = quote
+  const allSimulated = quotes.every((q) => !q.isLive)
 
   const protocolFeeValue = (fromAmount * fromToken.priceBTC * BTC_USD_PRICE * PROTOCOL_FEE_BPS) / 10_000
-  const expiresIn = Math.max(0, Math.round((quote.expiresAt - Date.now()) / 1000))
+
+  // Countdown + auto-expire
+  useEffect(() => {
+    const id = setInterval(() => {
+      const remaining = Math.max(0, Math.round((quote.expiresAt - Date.now()) / 1000))
+      setExpiresIn(remaining)
+      if (remaining === 0) {
+        clearInterval(id)
+        onExpired?.()
+      }
+    }, 1000)
+    return () => clearInterval(id)
+  }, [quote.expiresAt, onExpired])
 
   return (
     <div className="space-y-2">
+      {/* Simulated quotes disclosure */}
+      {allSimulated && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-warning/5 border border-warning/20 rounded-xl text-xs text-warning">
+          <FlaskConical size={12} />
+          <span>Quotes are simulated — real DEX integrations coming soon</span>
+        </div>
+      )}
+
       {/* Best route summary */}
       <div className="bg-surface border border-border rounded-xl p-4 space-y-3">
         <div className="flex items-center justify-between">
@@ -33,6 +58,9 @@ export function QuoteDisplay({ quote }: QuoteDisplayProps) {
               {bestQuote.dexLogo}
             </div>
             <span className="text-text-primary text-sm font-semibold">{bestQuote.dex}</span>
+            {!bestQuote.isLive && (
+              <span className="text-xs bg-border text-text-muted px-1.5 py-0.5 rounded">simulated</span>
+            )}
           </div>
         </div>
 
@@ -65,7 +93,10 @@ export function QuoteDisplay({ quote }: QuoteDisplayProps) {
             <span>Protocol fee: {formatUSD(protocolFeeValue)} (0.15%)</span>
           </div>
           <div className="text-text-muted">
-            Expires in <span className={`font-mono ${expiresIn < 10 ? 'text-danger' : 'text-text-secondary'}`}>{expiresIn}s</span>
+            Expires in{' '}
+            <span className={`font-mono ${expiresIn < 10 ? 'text-danger font-semibold' : 'text-text-secondary'}`}>
+              {expiresIn}s
+            </span>
           </div>
         </div>
       </div>
@@ -96,6 +127,9 @@ export function QuoteDisplay({ quote }: QuoteDisplayProps) {
                       <span className="text-text-primary text-sm font-medium">{q.dex}</span>
                       {q.isBest && (
                         <span className="text-xs bg-primary/15 text-primary px-1.5 py-0.5 rounded font-semibold">BEST</span>
+                      )}
+                      {!q.isLive && (
+                        <span className="text-xs bg-border text-text-muted px-1.5 py-0.5 rounded">sim</span>
                       )}
                     </div>
                     <div className="text-text-muted text-xs mt-0.5">

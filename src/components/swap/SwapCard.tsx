@@ -1,7 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSwap } from '@/hooks/useSwap'
 import { useWallet } from '@/hooks/useWallet'
+import { useTokens } from '@/hooks/useTokens'
+import { useSearchParams } from 'next/navigation'
 import { TokenSelector } from './TokenSelector'
 import { QuoteDisplay } from './QuoteDisplay'
 import { Button } from '@/components/ui/Button'
@@ -15,6 +17,24 @@ import { SLIPPAGE_OPTIONS, BTC_USD_PRICE } from '@/lib/constants'
 export function SwapCard() {
   const swap = useSwap()
   const { wallet, openModal } = useWallet()
+  const { tokens } = useTokens()
+  const searchParams = useSearchParams()
+
+  // Pre-populate tokens from URL params (?from=ORDI&to=BTC)
+  useEffect(() => {
+    const fromId = searchParams.get('from')
+    const toId = searchParams.get('to')
+    if (fromId && !swap.fromToken) {
+      const t = tokens.find((tk) => tk.id === fromId || tk.symbol === fromId)
+      if (t) swap.setFromToken(t)
+    }
+    if (toId && !swap.toToken) {
+      const t = tokens.find((tk) => tk.id === toId || tk.symbol === toId)
+      if (t) swap.setToToken(t)
+    }
+  // Only run when tokens load — avoids overwriting user selection on re-render
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tokens])
   const [showFromSelector, setShowFromSelector] = useState(false)
   const [showToSelector, setShowToSelector] = useState(false)
   const [showSlippage, setShowSlippage] = useState(false)
@@ -189,7 +209,15 @@ export function SwapCard() {
       {/* Quote display below card */}
       {swap.quote && (
         <div className="mt-3">
-          <QuoteDisplay quote={swap.quote} />
+          <QuoteDisplay
+            quote={swap.quote}
+            onExpired={() => {
+              // Auto-refresh when quote expires — re-triggers debounced fetch
+              if (swap.fromToken && swap.toToken && swap.fromAmount) {
+                swap.setFromAmount(swap.fromAmount)
+              }
+            }}
+          />
         </div>
       )}
 

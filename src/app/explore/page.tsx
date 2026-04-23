@@ -1,8 +1,9 @@
 'use client'
 import { useState } from 'react'
 import { TokenTable } from '@/components/explore/TokenTable'
-import { TOKEN_LIST } from '@/lib/constants'
+import { useTokens } from '@/hooks/useTokens'
 import { formatUSD } from '@/lib/utils'
+import { TOKEN_LIST } from '@/lib/constants'
 import type { AssetType } from '@/types'
 import { Search } from 'lucide-react'
 
@@ -15,15 +16,16 @@ const TABS: { key: FilterTab; label: string }[] = [
   { key: 'BTC', label: 'Bitcoin' },
 ]
 
-const totalVolume = TOKEN_LIST.reduce((s, t) => s + t.volume24h, 0)
-const totalMarketCap = TOKEN_LIST.reduce((s, t) => s + t.marketCap, 0)
-
 export default function ExplorePage() {
   const [activeTab, setActiveTab] = useState<FilterTab>('ALL')
+  const [query, setQuery] = useState('')
+  const { tokens } = useTokens()
+
+  const totalVolume = tokens.reduce((s, t) => s + t.volume24h, 0)
+  const totalMarketCap = tokens.reduce((s, t) => s + t.marketCap, 0)
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-black text-text-primary">Explore</h1>
         <p className="text-text-secondary mt-2">
@@ -31,7 +33,6 @@ export default function ExplorePage() {
         </p>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {[
           { label: 'Tokens Listed', value: TOKEN_LIST.length.toString() },
@@ -46,9 +47,7 @@ export default function ExplorePage() {
         ))}
       </div>
 
-      {/* Token table */}
       <div className="bg-card border border-border rounded-2xl overflow-hidden">
-        {/* Table header */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 border-b border-border">
           <div className="flex gap-1 flex-1">
             {TABS.map((tab) => (
@@ -69,14 +68,15 @@ export default function ExplorePage() {
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
             <input
               type="text"
-              placeholder="Search..."
-              readOnly
-              className="w-full bg-surface border border-border rounded-xl pl-8 pr-4 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none cursor-default"
+              placeholder="Search tokens..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-full bg-surface border border-border rounded-xl pl-8 pr-4 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary/50 transition-colors"
             />
           </div>
         </div>
 
-        <TokenTable filter={activeTab === 'ALL' ? 'ALL' : activeTab} />
+        <TokenTable filter={activeTab === 'ALL' ? 'ALL' : activeTab} query={query} />
       </div>
     </div>
   )
