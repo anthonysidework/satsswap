@@ -40,7 +40,7 @@ export function SwapCard() {
   const [showSlippage, setShowSlippage] = useState(false)
   const [customSlippage, setCustomSlippage] = useState('')
 
-  const canSwap = swap.fromToken && swap.toToken && swap.fromAmount && swap.quote && !swap.isQuoting
+  const canSwap = swap.fromToken && swap.toToken && swap.fromAmount && swap.quote && !swap.isQuoting && !swap.balanceError
   const toAmount = swap.quote?.bestQuote.estimatedOutput ?? 0
 
   function handleFromAmountChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -49,17 +49,34 @@ export function SwapCard() {
     swap.setFromAmount(val)
   }
 
+  const STEP_LABELS: Record<string, string> = {
+    building:     'Getting PSBT...',
+    signing:      'Sign in Wallet...',
+    broadcasting: 'Broadcasting...',
+  }
+
   function getButtonLabel() {
     if (!wallet) return 'Connect Wallet'
+    if (swap.balanceError) return swap.balanceError
     if (!swap.fromToken || !swap.toToken) return 'Select Tokens'
     if (!swap.fromAmount) return 'Enter an Amount'
     if (swap.isQuoting) return 'Getting Best Quote...'
-    if (swap.isSwapping) return 'Confirming in Wallet...'
+    if (swap.isSwapping) return STEP_LABELS[swap.swapStep] ?? 'Processing...'
     if (swap.quote) return `Swap via ${swap.quote.bestQuote.dex}`
     return 'Get Quote'
   }
 
   if (swap.txHash) {
+    const statusLabel: Record<string, string> = {
+      mempool:   'In mempool — awaiting confirmation',
+      confirmed: 'Confirmed on Bitcoin',
+      failed:    'Transaction failed',
+    }
+    const statusColor: Record<string, string> = {
+      mempool:   'text-warning',
+      confirmed: 'text-success',
+      failed:    'text-danger',
+    }
     return (
       <div className="bg-card border border-border rounded-2xl p-6 shadow-card text-center space-y-4">
         <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto">
@@ -67,8 +84,30 @@ export function SwapCard() {
         </div>
         <div>
           <h3 className="text-text-primary font-bold text-xl">Swap Submitted!</h3>
-          <p className="text-text-secondary text-sm mt-1">Your transaction is being processed.</p>
+          {swap.txStatus && (
+            <p className={`text-sm mt-1 font-medium ${statusColor[swap.txStatus] ?? 'text-text-secondary'}`}>
+              {statusLabel[swap.txStatus] ?? swap.txStatus}
+            </p>
+          )}
         </div>
+
+        {/* Confirmation steps */}
+        <div className="flex items-center justify-center gap-2 text-xs">
+          {(['broadcasting', 'mempool', 'confirmed'] as const).map((step, i) => {
+            const reached = ['mempool', 'confirmed'].includes(swap.txStatus ?? '') && i <= 1
+              || swap.txStatus === 'confirmed' && i <= 2
+            return (
+              <div key={step} className="flex items-center gap-1">
+                {i > 0 && <div className={`w-6 h-px ${reached ? 'bg-success' : 'bg-border'}`} />}
+                <div className={`w-2 h-2 rounded-full ${reached ? 'bg-success' : 'bg-border'}`} />
+                <span className={reached ? 'text-success' : 'text-text-muted'}>
+                  {['Sent', 'Mempool', 'Confirmed'][i]}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+
         <a
           href={`https://mempool.space/tx/${swap.txHash}`}
           target="_blank"
@@ -195,7 +234,8 @@ export function SwapCard() {
             className="w-full"
             size="lg"
             loading={swap.isQuoting || swap.isSwapping}
-            disabled={!canSwap && !!wallet}
+            disabled={(!!wallet && !canSwap) || !!swap.balanceError}
+            variant={swap.balanceError ? 'danger' : 'primary'}
             onClick={!wallet ? openModal : swap.executeSwap}
           >
             {getButtonLabel()}

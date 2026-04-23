@@ -42,6 +42,7 @@ export default function PortfolioPage() {
   const { tokens: liveTokens } = useTokens()
   const [copied, setCopied] = useState(false)
   const [holdings, setHoldings] = useState<PortfolioHolding[]>([])
+  const [runesNote, setRunesNote] = useState<string | null>(null)
   const [holdingsLoading, setHoldingsLoading] = useState(false)
   const [holdingsError, setHoldingsError] = useState(false)
   const [lastFetched, setLastFetched] = useState<string | null>(null)
@@ -51,7 +52,6 @@ export default function PortfolioPage() {
       setHoldings([])
       return
     }
-    // Skip re-fetch if address hasn't changed
     if (wallet.address === lastFetched) return
 
     setHoldingsLoading(true)
@@ -64,6 +64,7 @@ export default function PortfolioPage() {
       })
       .then((data) => {
         setHoldings(data.holdings ?? [])
+        setRunesNote(data.runesInfo?.reason ?? null)
         setLastFetched(wallet.address)
         setHoldingsLoading(false)
       })
@@ -236,13 +237,13 @@ export default function PortfolioPage() {
           </div>
         )}
 
-        {/* Runes — coming with full indexer */}
-        <div className="bg-card border border-dashed border-border rounded-2xl p-6 text-center">
-          <div className="text-text-secondary text-sm font-medium mb-1">Rune Balances</div>
-          <div className="text-text-muted text-xs leading-relaxed">
-            Live Rune balances require a full Runes indexer. Coming in V2.
+        {/* Rune balances — no free public indexer currently available */}
+        {runesNote && (
+          <div className="bg-card border border-dashed border-border rounded-2xl p-5">
+            <div className="text-text-secondary text-sm font-medium mb-1">Rune Balances</div>
+            <div className="text-text-muted text-xs leading-relaxed">{runesNote}</div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )

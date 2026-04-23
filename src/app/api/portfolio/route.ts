@@ -3,14 +3,7 @@ import { getLiveTokenList } from '@/lib/prices'
 
 const UNISAT_BASE = 'https://open-api.unisat.io'
 
-// Fetch balance for one specific BRC-20 ticker at a given address.
-// Returns the already-human-readable balance (e.g. "9224378.22" for ORDI).
-// Endpoint confirmed: GET /v1/indexer/address/{address}/brc20/{ticker}/info
-async function fetchTickerBalance(
-  address: string,
-  ticker: string,
-  key: string
-): Promise<number> {
+async function fetchTickerBalance(address: string, ticker: string, key: string): Promise<number> {
   const res = await fetch(
     `${UNISAT_BASE}/v1/indexer/address/${address}/brc20/${ticker}/info`,
     { headers: { Authorization: `Bearer ${key}` }, next: { revalidate: 60 } }
@@ -19,6 +12,20 @@ async function fetchTickerBalance(
   const json = await res.json()
   if (json?.code !== 0 || !json?.data) return 0
   return parseFloat(json.data.overallBalance ?? '0') || 0
+}
+
+// Rune balance lookup: Unisat open API does not expose address-level Rune balances
+// in the free tier. We return runesSource to let the client know what's possible.
+// The client-side portfolio page tries the connected wallet's provider API directly.
+async function fetchRuneBalances(
+  _address: string
+): Promise<{ source: 'unavailable'; reason: string }> {
+  return {
+    source: 'unavailable',
+    reason:
+      'No free public Rune balance indexer is currently available. ' +
+      'If you connected via Unisat, your Rune balances are visible in the Unisat wallet app.',
+  }
 }
 
 export const dynamic = 'force-dynamic'
@@ -31,14 +38,16 @@ export async function GET(req: NextRequest) {
 
   const key = process.env.UNISAT_API_KEY
   if (!key) {
-    return NextResponse.json({ holdings: [], runesSupported: false })
+    return NextResponse.json({ holdings: [], runesInfo: null })
   }
 
-  const [tokens] = await Promise.all([getLiveTokenList()])
+  const [tokens, runesInfo] = await Promise.all([
+    getLiveTokenList(),
+    fetchRuneBalances(address),
+  ])
 
   const brc20Tokens = tokens.filter((t) => t.type === 'BRC20')
 
-  // Fetch balances for all tracked BRC-20 tokens in parallel
   const balanceResults = await Promise.allSettled(
     brc20Tokens.map(async (token) => {
       const balance = await fetchTickerBalance(address, token.symbol.toLowerCase(), key)
@@ -63,5 +72,5 @@ export async function GET(req: NextRequest) {
       logoUrl: token.logoUrl,
     }))
 
-  return NextResponse.json({ holdings, runesSupported: false })
+  return NextResponse.json({ holdings, runesInfo })
 }

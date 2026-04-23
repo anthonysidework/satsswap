@@ -47,7 +47,8 @@ export interface WalletProvider {
 }
 
 export interface ConnectedWallet {
-  address: string
+  address: string          // payment address (bc1q native segwit)
+  taprootAddress?: string  // ordinals/Runes address (bc1p taproot) — Xverse/Leather only
   publicKey: string
   provider: string
   balanceSats: number
