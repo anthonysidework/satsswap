@@ -1,15 +1,31 @@
-import type { QuoteParams, AggregatedQuote, DexQuote } from './types'
+import type { QuoteParams, AggregatedQuote, DexQuote, DexAdapter } from './types'
 import { MOCK_ADAPTERS } from './mock'
+import { OKXAdapter } from './adapters/okx'
+
+/**
+ * Returns all active adapters.
+ * OKX uses the public exchange market API (no key needed) — always included.
+ * Mock adapters are always included as fallback/comparison options.
+ */
+function getAdapters(): DexAdapter[] {
+  return [OKXAdapter, ...MOCK_ADAPTERS]
+}
 
 export async function getAggregatedQuote(params: QuoteParams): Promise<AggregatedQuote> {
+  const adapters = getAdapters()
+
   const results = await Promise.allSettled(
-    MOCK_ADAPTERS.map((adapter) => adapter.getQuote(params))
+    adapters.map((adapter) => adapter.getQuote(params))
   )
 
   const quotes: DexQuote[] = results
     .filter((r): r is PromiseFulfilledResult<DexQuote> => r.status === 'fulfilled')
     .map((r) => r.value)
-    .sort((a, b) => b.estimatedOutput - a.estimatedOutput)
+    // Sort: live quotes first, then by estimated output
+    .sort((a, b) => {
+      if (a.isLive !== b.isLive) return a.isLive ? -1 : 1
+      return b.estimatedOutput - a.estimatedOutput
+    })
 
   if (quotes.length === 0) throw new Error('No liquidity available for this pair')
 

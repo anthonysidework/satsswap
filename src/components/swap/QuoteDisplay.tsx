@@ -17,6 +17,7 @@ export function QuoteDisplay({ quote, onExpired }: QuoteDisplayProps) {
   )
   const { bestQuote, quotes, fromToken, toToken, fromAmount } = quote
   const allSimulated = quotes.every((q) => !q.isLive)
+  const liveCount = quotes.filter((q) => q.isLive).length
 
   const protocolFeeValue = (fromAmount * fromToken.priceBTC * BTC_USD_PRICE * PROTOCOL_FEE_BPS) / 10_000
 
@@ -35,11 +36,19 @@ export function QuoteDisplay({ quote, onExpired }: QuoteDisplayProps) {
 
   return (
     <div className="space-y-2">
-      {/* Simulated quotes disclosure */}
-      {allSimulated && (
+      {/* Quote source disclosure */}
+      {allSimulated ? (
         <div className="flex items-center gap-2 px-3 py-2 bg-warning/5 border border-warning/20 rounded-xl text-xs text-warning">
           <FlaskConical size={12} />
           <span>Quotes are simulated — real DEX integrations coming soon</span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 px-3 py-2 bg-success/5 border border-success/20 rounded-xl text-xs text-success">
+          <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+          <span>
+            {liveCount} live {liveCount === 1 ? 'quote' : 'quotes'} from real market data
+            {quotes.length > liveCount && ` · ${quotes.length - liveCount} simulated`}
+          </span>
         </div>
       )}
 
@@ -58,7 +67,9 @@ export function QuoteDisplay({ quote, onExpired }: QuoteDisplayProps) {
               {bestQuote.dexLogo}
             </div>
             <span className="text-text-primary text-sm font-semibold">{bestQuote.dex}</span>
-            {!bestQuote.isLive && (
+            {bestQuote.isLive ? (
+              <span className="text-xs bg-success/10 text-success px-1.5 py-0.5 rounded font-medium">live</span>
+            ) : (
               <span className="text-xs bg-border text-text-muted px-1.5 py-0.5 rounded">simulated</span>
             )}
           </div>
