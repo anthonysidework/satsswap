@@ -12,6 +12,9 @@ export const SUPPORTED_DEXES = [
   { name: 'Magic Eden', logo: 'M', color: '#E83E8C' },
 ]
 
+// Confirmed CoinGecko image URLs (fetched 2025-04-22, stable CDN)
+const CG = 'https://coin-images.coingecko.com/coins/images'
+
 export const TOKEN_LIST: Token[] = [
   {
     id: 'BTC',
@@ -25,6 +28,7 @@ export const TOKEN_LIST: Token[] = [
     volume24h: 28_400_000_000,
     marketCap: 1_920_000_000_000,
     logoColor: '#F7931A',
+    logoUrl: `${CG}/1/large/bitcoin.png?1696501400`,
   },
   {
     id: 'DOG•GO•TO•THE•MOON',
@@ -103,6 +107,7 @@ export const TOKEN_LIST: Token[] = [
     volume24h: 12_600_000,
     marketCap: 654_000_000,
     logoColor: '#F7931A',
+    logoUrl: `${CG}/30162/large/ordi.png?1696529082`,
   },
   {
     id: 'SATS',
@@ -116,6 +121,7 @@ export const TOKEN_LIST: Token[] = [
     volume24h: 8_200_000,
     marketCap: 580_000_000,
     logoColor: '#F59E0B',
+    logoUrl: `${CG}/30666/large/_dD8qr3M_400x400.png?1702913020`,
   },
   {
     id: 'RATS',
@@ -129,6 +135,7 @@ export const TOKEN_LIST: Token[] = [
     volume24h: 3_100_000,
     marketCap: 190_000_000,
     logoColor: '#9D4EDD',
+    logoUrl: `${CG}/33828/large/rats.png?1703065500`,
   },
   {
     id: 'MEME',

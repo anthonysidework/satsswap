@@ -12,6 +12,7 @@ export interface Token {
   volume24h: number
   marketCap: number
   logoColor: string
+  logoUrl?: string
 }
 
 export interface DexQuote {

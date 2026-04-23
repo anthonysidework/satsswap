@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTokens } from '@/hooks/useTokens'
 import { formatUSD, formatAmount } from '@/lib/utils'
 import { Badge } from '@/components/ui/Badge'
+import { TokenLogo } from '@/components/ui/TokenLogo'
 import Link from 'next/link'
 import { TrendingUp, TrendingDown, ArrowUpDown } from 'lucide-react'
 import type { AssetType } from '@/types'
@@ -68,12 +69,7 @@ export function TokenTable({ filter }: { filter: AssetType | 'ALL' }) {
               <td className="px-4 py-4 text-text-muted text-sm">{i + 1}</td>
               <td className="px-4 py-4">
                 <div className="flex items-center gap-3">
-                  <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-                    style={{ backgroundColor: token.logoColor + '18', border: `1px solid ${token.logoColor}35` }}
-                  >
-                    <span style={{ color: token.logoColor }}>{token.symbol.slice(0, 2)}</span>
-                  </div>
+                  <TokenLogo token={token} size={36} />
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-text-primary font-semibold text-sm">{token.symbol}</span>

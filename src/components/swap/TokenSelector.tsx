@@ -5,6 +5,7 @@ import type { Token } from '@/types'
 import { formatUSD } from '@/lib/utils'
 import { Search, X } from 'lucide-react'
 import { Badge } from '@/components/ui/Badge'
+import { TokenLogo } from '@/components/ui/TokenLogo'
 
 interface TokenSelectorProps {
   onSelect: (token: Token) => void
@@ -93,12 +94,7 @@ export function TokenSelector({ onSelect, onClose, excludeId }: TokenSelectorPro
                 onClick={() => { onSelect(token); onClose() }}
                 className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-surface transition-colors group"
               >
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-                  style={{ backgroundColor: token.logoColor + '22', border: `1px solid ${token.logoColor}40` }}
-                >
-                  <span style={{ color: token.logoColor }}>{token.symbol.slice(0, 2)}</span>
-                </div>
+                <TokenLogo token={token} size={40} />
                 <div className="flex-1 text-left min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-text-primary font-semibold text-sm">{token.symbol}</span>

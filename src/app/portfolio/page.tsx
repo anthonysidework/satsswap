@@ -1,8 +1,10 @@
 'use client'
 import { useWallet } from '@/hooks/useWallet'
+import { useTokens } from '@/hooks/useTokens'
 import { Button } from '@/components/ui/Button'
+import { TokenLogo } from '@/components/ui/TokenLogo'
 import { formatBTC, formatUSD, truncateAddress } from '@/lib/utils'
-import { TOKEN_LIST, BTC_USD_PRICE } from '@/lib/constants'
+import { BTC_USD_PRICE } from '@/lib/constants'
 import { Wallet, ArrowUpRight, Copy } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
@@ -44,11 +46,14 @@ export default function PortfolioPage() {
     )
   }
 
+  const { tokens: liveTokens } = useTokens()
+
   const btcValue = wallet.balanceSats / 1e8
-  const btcUSD = btcValue * BTC_USD_PRICE
+  const btcToken = liveTokens.find((t) => t.id === 'BTC')
+  const btcUSD = btcValue * (btcToken?.priceUSD ?? BTC_USD_PRICE)
 
   const holdings = MOCK_HOLDINGS.map((h) => {
-    const token = TOKEN_LIST.find((t) => t.id === h.tokenId)!
+    const token = liveTokens.find((t) => t.id === h.tokenId) ?? liveTokens[0]
     return {
       ...h,
       token,
@@ -98,17 +103,14 @@ export default function PortfolioPage() {
       <div className="space-y-3">
         {/* BTC */}
         <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
-            style={{ backgroundColor: '#F7931A18', border: '1px solid #F7931A35' }}>
-            <span style={{ color: '#F7931A' }}>BT</span>
-          </div>
+          {btcToken && <TokenLogo token={btcToken} size={40} />}
           <div className="flex-1 min-w-0">
             <div className="text-text-primary font-semibold">Bitcoin</div>
             <div className="text-text-muted text-sm font-mono">{formatBTC(wallet.balanceSats)} BTC</div>
           </div>
           <div className="text-right">
             <div className="text-text-primary font-bold">{formatUSD(btcUSD)}</div>
-            <div className="text-text-muted text-xs">${BTC_USD_PRICE.toLocaleString()} / BTC</div>
+            <div className="text-text-muted text-xs">${(btcToken?.priceUSD ?? BTC_USD_PRICE).toLocaleString()} / BTC</div>
           </div>
           <Link href="/swap" className="flex-shrink-0">
             <Button size="sm" variant="secondary">Swap</Button>
@@ -118,12 +120,7 @@ export default function PortfolioPage() {
         {/* Token holdings */}
         {holdings.map((h) => (
           <div key={h.tokenId} className="bg-card border border-border rounded-xl p-4 flex items-center gap-4">
-            <div
-              className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
-              style={{ backgroundColor: h.token.logoColor + '18', border: `1px solid ${h.token.logoColor}35` }}
-            >
-              <span style={{ color: h.token.logoColor }}>{h.token.symbol.slice(0, 2)}</span>
-            </div>
+            <TokenLogo token={h.token} size={40} />
             <div className="flex-1 min-w-0">
               <div className="text-text-primary font-semibold">{h.token.symbol}</div>
               <div className="text-text-muted text-sm font-mono">

@@ -1,10 +1,12 @@
 import { SwapCard } from '@/components/swap/SwapCard'
-import { TOKEN_LIST } from '@/lib/constants'
+import { TokenLogo } from '@/components/ui/TokenLogo'
+import { getLiveTokenList } from '@/lib/prices'
 import { formatUSD } from '@/lib/utils'
 import { TrendingUp, TrendingDown } from 'lucide-react'
 
-export default function SwapPage() {
-  const trending = TOKEN_LIST.filter((t) => t.type !== 'BTC').slice(0, 4)
+export default async function SwapPage() {
+  const liveTokens = await getLiveTokenList()
+  const trending = liveTokens.filter((t) => t.type !== 'BTC').slice(0, 4)
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
@@ -31,7 +33,7 @@ export default function SwapPage() {
                 },
                 {
                   title: 'One Tiny Protocol Fee',
-                  desc: 'We charge 0.15% on successful swaps. That\'s it. No hidden fees, no spread markup.',
+                  desc: "We charge 0.15% on successful swaps. That's it. No hidden fees, no spread markup.",
                 },
               ].map((item) => (
                 <div key={item.title} className="flex gap-3">
@@ -53,12 +55,7 @@ export default function SwapPage() {
             <div className="space-y-3">
               {trending.map((token) => (
                 <div key={token.id} className="flex items-center gap-3">
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                    style={{ backgroundColor: token.logoColor + '18', border: `1px solid ${token.logoColor}35` }}
-                  >
-                    <span style={{ color: token.logoColor }}>{token.symbol.slice(0, 2)}</span>
-                  </div>
+                  <TokenLogo token={token} size={32} />
                   <div className="flex-1 min-w-0">
                     <div className="text-text-primary text-sm font-semibold">{token.symbol}</div>
                     <div className="text-text-muted text-xs truncate">{token.name}</div>

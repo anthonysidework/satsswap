@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
+import { TokenLogo } from '@/components/ui/TokenLogo'
 import { SUPPORTED_DEXES } from '@/lib/constants'
 import { getLiveTokenList } from '@/lib/prices'
 import { formatUSD } from '@/lib/utils'
@@ -123,12 +124,7 @@ export default async function Home() {
                 href={`/swap?from=${encodeURIComponent(t.id)}`}
                 className="flex items-center gap-2.5 bg-card border border-border hover:border-border-light rounded-xl px-4 py-3 flex-shrink-0 transition-all hover:shadow-card"
               >
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-                  style={{ backgroundColor: t.logoColor + '22', border: `1px solid ${t.logoColor}40` }}
-                >
-                  <span style={{ color: t.logoColor }}>{t.symbol.slice(0, 2)}</span>
-                </div>
+                <TokenLogo token={t} size={32} />
                 <div>
                   <div className="text-text-primary text-sm font-semibold">{t.symbol}</div>
                   <div className="text-text-muted text-xs">{formatUSD(t.priceUSD)}</div>

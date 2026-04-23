@@ -2,7 +2,7 @@
 
 const nextConfig = {
   images: {
-    domains: ['ordinals.com', 'api.unisat.io', 'static.okx.com'],
+    domains: ['coin-images.coingecko.com', 'assets.coingecko.com', 'ordinals.com', 'api.unisat.io', 'static.okx.com'],
   },
 }
 

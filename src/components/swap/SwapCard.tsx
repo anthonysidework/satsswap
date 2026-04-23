@@ -6,6 +6,7 @@ import { TokenSelector } from './TokenSelector'
 import { QuoteDisplay } from './QuoteDisplay'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { TokenLogo } from '@/components/ui/TokenLogo'
 import { formatAmount, formatUSD, formatBTC, cn } from '@/lib/utils'
 import { ArrowUpDown, Settings, CheckCircle, ExternalLink } from 'lucide-react'
 import type { Token } from '@/types'
@@ -277,12 +278,7 @@ function TokenInputBox({ label, token, amount, onAmountChange, onTokenClick, rea
         >
           {token ? (
             <>
-              <div
-                className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ backgroundColor: token.logoColor + '22', border: `1px solid ${token.logoColor}50` }}
-              >
-                <span style={{ color: token.logoColor }}>{token.symbol.slice(0, 1)}</span>
-              </div>
+              <TokenLogo token={token} size={24} />
               <span>{token.symbol}</span>
               <Badge
                 variant={token.type === 'RUNE' ? 'rune' : token.type === 'BRC20' ? 'brc20' : 'btc'}

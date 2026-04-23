@@ -1,51 +1,67 @@
-// CoinGecko free tier — no API key needed, rate limited to ~30 calls/min
-// Only ORDI and SATS are listed on CoinGecko; others fall back to mock data
+// CoinGecko free tier — no API key, ~30 req/min
+// Tracks prices AND logo URLs for BRC-20 tokens listed on CoinGecko
 
 const BASE = 'https://api.coingecko.com/api/v3'
 
-// Map our token symbols to CoinGecko coin IDs
+// Our token symbol → CoinGecko coin ID mapping (confirmed 2025-04-22)
 export const COINGECKO_IDS: Record<string, string> = {
+  BTC: 'bitcoin',
   ORDI: 'ordinals',
   SATS: 'sats-ordinals',
+  RATS: '1000rats',
 }
 
-export interface CoinGeckoPrice {
+export interface CoinGeckoData {
   symbol: string
   priceBTC: number
   priceUSD: number
   change24h: number
   volume24hUSD: number
   marketCapUSD: number
+  logoUrl: string
 }
 
-export async function fetchCoinGeckoPrices(): Promise<CoinGeckoPrice[]> {
-  const ids = Object.values(COINGECKO_IDS).join(',')
-  const url = `${BASE}/simple/price?ids=${ids}&vs_currencies=usd,btc&include_24hr_vol=true&include_24hr_change=true&include_market_cap=true`
+export async function fetchCoinGeckoData(btcUSD: number): Promise<CoinGeckoData[]> {
+  // Exclude BTC itself — we get its USD price from mempool.space
+  const altcoinIds = Object.entries(COINGECKO_IDS)
+    .filter(([sym]) => sym !== 'BTC')
+    .map(([, id]) => id)
+    .join(',')
+
+  const url = `${BASE}/coins/markets?vs_currency=usd&ids=${altcoinIds}&sparkline=false&price_change_percentage=24h`
 
   const res = await fetch(url, {
     next: { revalidate: 300 },
     headers: { Accept: 'application/json' },
   })
-  if (!res.ok) throw new Error(`CoinGecko fetch failed: ${res.status}`)
+  if (!res.ok) throw new Error(`CoinGecko /coins/markets failed: ${res.status}`)
 
-  const data: Record<string, {
-    usd: number
-    btc: number
-    usd_24h_vol: number
-    usd_24h_change: number
-    usd_market_cap: number
+  const coins: Array<{
+    id: string
+    symbol: string
+    image: string
+    current_price: number
+    market_cap: number
+    total_volume: number
+    price_change_percentage_24h: number
   }> = await res.json()
 
-  return Object.entries(COINGECKO_IDS).map(([symbol, cgId]) => {
-    const d = data[cgId]
-    if (!d) return null
+  // Reverse-lookup: CoinGecko ID → our token symbol
+  const idToSymbol = Object.fromEntries(
+    Object.entries(COINGECKO_IDS).map(([sym, id]) => [id, sym])
+  )
+
+  return coins.map((coin) => {
+    const symbol = idToSymbol[coin.id] ?? coin.symbol.toUpperCase()
+    const priceUSD = coin.current_price ?? 0
     return {
       symbol,
-      priceBTC: d.btc ?? 0,
-      priceUSD: d.usd ?? 0,
-      change24h: d.usd_24h_change ?? 0,
-      volume24hUSD: d.usd_24h_vol ?? 0,
-      marketCapUSD: d.usd_market_cap ?? 0,
+      priceBTC: btcUSD > 0 ? priceUSD / btcUSD : 0,
+      priceUSD,
+      change24h: coin.price_change_percentage_24h ?? 0,
+      volume24hUSD: coin.total_volume ?? 0,
+      marketCapUSD: coin.market_cap ?? 0,
+      logoUrl: coin.image ?? '',
     }
-  }).filter((x): x is CoinGeckoPrice => x !== null)
+  })
 }

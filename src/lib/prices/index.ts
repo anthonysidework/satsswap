@@ -1,11 +1,10 @@
-import { fetchCoinGeckoPrices } from './coingecko'
+import { fetchCoinGeckoData } from './coingecko'
 import { fetchBRC20Info } from './unisat'
 import { TOKEN_LIST } from '@/lib/constants'
 import type { Token } from '@/types'
 
-// In-memory cache — survives between requests, resets on server restart/redeploy
 let priceCache: { tokens: Token[]; fetchedAt: number } | null = null
-const CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
+const CACHE_TTL_MS = 5 * 60 * 1000
 
 async function fetchBTCPrice(): Promise<number> {
   try {
@@ -21,50 +20,43 @@ async function fetchBTCPrice(): Promise<number> {
 }
 
 async function buildLiveTokenList(): Promise<Token[]> {
-  const [btcPriceResult, cgPricesResult, unisatInfoResult] = await Promise.allSettled([
-    fetchBTCPrice(),
-    fetchCoinGeckoPrices(),
+  const btcUSD = await fetchBTCPrice()
+
+  const [cgResult, unisatResult] = await Promise.allSettled([
+    fetchCoinGeckoData(btcUSD),
     fetchBRC20Info(),
   ])
 
-  const btcUSD = btcPriceResult.status === 'fulfilled' ? btcPriceResult.value : TOKEN_LIST[0].priceUSD
-
   const cgMap = new Map(
-    (cgPricesResult.status === 'fulfilled' ? cgPricesResult.value : []).map((p) => [p.symbol, p])
+    (cgResult.status === 'fulfilled' ? cgResult.value : []).map((d) => [d.symbol, d])
   )
-
-  const unisatMap = btcUSD > 0
-    ? (unisatInfoResult.status === 'fulfilled' ? unisatInfoResult.value : new Map())
-    : new Map()
+  const unisatMap =
+    unisatResult.status === 'fulfilled' ? unisatResult.value : new Map()
 
   return TOKEN_LIST.map((token): Token => {
-    // BTC: update live USD price only
     if (token.type === 'BTC') {
       return { ...token, priceUSD: btcUSD }
     }
 
-    // BRC-20: use CoinGecko price if available, Unisat for metadata
     if (token.type === 'BRC20') {
-      const livePrice = cgMap.get(token.symbol)
-      const meta = unisatMap.get(token.symbol)
-      if (livePrice && livePrice.priceBTC > 0) {
+      const live = cgMap.get(token.symbol)
+      if (live && live.priceUSD > 0) {
         return {
           ...token,
-          priceBTC: livePrice.priceBTC,
-          priceUSD: livePrice.priceUSD,
-          change24h: livePrice.change24h,
-          volume24h: livePrice.volume24hUSD,
-          marketCap: livePrice.marketCapUSD,
+          priceBTC: live.priceBTC,
+          priceUSD: live.priceUSD,
+          change24h: live.change24h,
+          volume24h: live.volume24hUSD,
+          marketCap: live.marketCapUSD,
+          // Prefer the live CoinGecko image; fall back to the hardcoded constant URL
+          logoUrl: live.logoUrl || token.logoUrl,
         }
       }
-      // No live price — keep mock price but update holders if Unisat has it
-      if (meta) return token
       return token
     }
 
-    // Runes: no reliable public price API currently available
-    // Prices remain as mock data; update BTC-denominated USD with live BTC price
     if (token.type === 'RUNE') {
+      // Scale mock BTC prices into live USD; no public Runes price API available yet
       return {
         ...token,
         priceUSD: token.priceBTC * btcUSD,
@@ -81,14 +73,12 @@ export async function getLiveTokenList(): Promise<Token[]> {
   if (priceCache && Date.now() - priceCache.fetchedAt < CACHE_TTL_MS) {
     return priceCache.tokens
   }
-
   try {
     const tokens = await buildLiveTokenList()
     priceCache = { tokens, fetchedAt: Date.now() }
     return tokens
   } catch (err) {
     console.error('[prices] Failed to build live token list:', err)
-    // Return stale cache if available, otherwise fall back to mock data
     return priceCache?.tokens ?? TOKEN_LIST
   }
 }
